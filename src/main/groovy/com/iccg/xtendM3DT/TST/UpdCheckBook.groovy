@@ -8,6 +8,14 @@ import java.time.format.DateTimeParseException
  *
  */
 public class UpdCheckBook extends ExtendM3Transaction {
+  // Global variables
+	 private final MIAPI mi;
+	 private final LoggerAPI logger;
+	 private final DatabaseAPI database;
+	 private final ProgramAPI program;
+	 private final MICallerAPI miCaller;
+	 public String status;
+	 public int dateCashed;
 
 	public UpdCheckBook(MIAPI mi, DatabaseAPI database, ProgramAPI program, MICallerAPI miCaller, LoggerAPI logger) {
 		this.mi = mi;
@@ -15,6 +23,23 @@ public class UpdCheckBook extends ExtendM3Transaction {
 		this.database = database;
 		this.program = program;
 		this.logger = logger;
+	}
+		/**
+	 * Main method
+	 */
+	public void main() {
+		int company = mi.getIn().get("CONO")==null?(int) program.getLDAZD().get("CONO"):(int)mi.getIn().get("CONO");
+		String division = mi.getIn().get("DIVI")==null?(String) program.getLDAZD().get("DIVI"):(String)mi.getIn().get("DIVI");
+		String checkNo = (String) mi.getIn().get("CHKN");
+		//append check No with 0
+		int expectedLength = 15 - checkNo.trim().size();
+		for(int i = 0; i<=expectedLength-1;i++)
+		{
+			checkNo = "0" + checkNo;
+		}
+		status = (int) mi.getIn().get("STTS");
+		dateCashed = (int) mi.getIn().get("CADA");
+		CheckAndUpdate(company, division, checkNo, status, dateCashed);
 	}
 	/**
 	 * 
@@ -74,29 +99,4 @@ public class UpdCheckBook extends ExtendM3Transaction {
 		lockedResult.set("CKLMDT",LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")).toInteger());
 		lockedResult.update();
 	}
-	/**
-	 * Main method
-	 */
-	public void main() {
-		int company = mi.getIn().get("CONO")==null?(int) program.getLDAZD().get("CONO"):(int)mi.getIn().get("CONO");
-		String division = mi.getIn().get("DIVI")==null?(String) program.getLDAZD().get("DIVI"):(String)mi.getIn().get("DIVI");
-		String checkNo = (String) mi.getIn().get("CHKN");
-		//append check No with 0
-		int expectedLength = 15 - checkNo.trim().size();
-		for(int i = 0; i<=expectedLength-1;i++)
-		{
-			checkNo = "0" + checkNo;
-		}
-		status = (int) mi.getIn().get("STTS");
-		dateCashed = (int) mi.getIn().get("CADA");
-		CheckAndUpdate(company, division, checkNo, status, dateCashed);
-	}
-	// Global variables
-	private final MIAPI mi;
-	private final LoggerAPI logger;
-	private final DatabaseAPI database;
-	private final ProgramAPI program;
-	private final MICallerAPI miCaller;
-	public String status;
-	public int dateCashed;
 }

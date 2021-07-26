@@ -6,6 +6,17 @@ import java.time.format.DateTimeFormatter
  * @author SSAADI Updates OOHEAD's TEPY, AGNT and OOHEAC AGN2, AGN3 fields
  */
 public class UpdOrdHead extends ExtendM3Transaction {
+  // Global variables
+	private final MIAPI mi;
+	private final LoggerAPI logger;
+	private final DatabaseAPI database;
+	private final ProgramAPI program;
+	private final MICallerAPI miCaller;
+	private String agent;
+	private String paymentTerms;
+	private String agent2;
+	private String agent3;
+  
 	/**
 	 * Constructor
 	 *
@@ -20,6 +31,38 @@ public class UpdOrdHead extends ExtendM3Transaction {
 		this.program = program;
 		this.miCaller = miCaller;
 		this.logger = logger;
+	}
+
+	/**
+	 *main method from here execution starts
+	 */
+	public void main() {
+		int company = (int) mi.getIn().get("CONO");
+		if (company == 0) {
+			company = (int) program.getLDAZD().get("CONO"); // if no CONO is provided take default company from user context
+		}
+		String orderNumber = (String) mi.getIn().get("ORNO");
+		agent = (String) mi.getIn().get("AGNT");
+		paymentTerms = (String) mi.getIn().get("TEPY");
+		agent2 = (String) mi.getIn().get("AGN2");
+		agent3 = (String) mi.getIn().get("AGN3");
+		if ((agent == null || agent.equals("")) && (paymentTerms == null || paymentTerms.equals(""))
+				&&(agent2 == null || agent2.equals(""))&&(agent3 == null || agent3.equals(""))) {
+			// if no update fields are entered then exit transaction
+			mi.error("Any one of the fields to be updated must be entered");
+			return;
+		}
+		// Check order
+		if(validateOrderNumber(company, orderNumber)) {
+			// Update order head
+			if((agent != null && !agent.equals("")) || (paymentTerms != null && !paymentTerms.equals(""))){
+				checkAndUpdateHeader(company, orderNumber, agent, paymentTerms);
+			}
+			if((agent2 != null && !agent2.equals(""))||(agent3 != null && !agent3.equals(""))) {
+				// update bonus commission
+				checkAndUpdateAgents(company,orderNumber, agent2, agent3);
+			}
+		}
 	}
 
 	/**
@@ -156,47 +199,4 @@ public class UpdOrdHead extends ExtendM3Transaction {
 		lockedResult.set("BELMDT",LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")).toInteger());
 		lockedResult.update();
 	}
-
-	/**
-	 *main method from here execution starts
-	 */
-	public void main() {
-		int company = (int) mi.getIn().get("CONO");
-		if (company == 0) {
-			company = (int) program.getLDAZD().get("CONO"); // if no CONO is provided take default company from user context
-		}
-		String orderNumber = (String) mi.getIn().get("ORNO");
-		agent = (String) mi.getIn().get("AGNT");
-		paymentTerms = (String) mi.getIn().get("TEPY");
-		agent2 = (String) mi.getIn().get("AGN2");
-		agent3 = (String) mi.getIn().get("AGN3");
-		if ((agent == null || agent.equals("")) && (paymentTerms == null || paymentTerms.equals(""))
-				&&(agent2 == null || agent2.equals(""))&&(agent3 == null || agent3.equals(""))) {
-			// if no update fields are entered then exit transaction
-			mi.error("Any one of the fields to be updated must be entered");
-			return;
-		}
-		// Check order
-		if(validateOrderNumber(company, orderNumber)) {
-			// Update order head
-			if((agent != null && !agent.equals("")) || (paymentTerms != null && !paymentTerms.equals(""))){
-				checkAndUpdateHeader(company, orderNumber, agent, paymentTerms);
-			}
-			if((agent2 != null && !agent2.equals(""))||(agent3 != null && !agent3.equals(""))) {
-				// update bonus commission
-				checkAndUpdateAgents(company,orderNumber, agent2, agent3);
-			}
-		}
-	}
-
-	// Global variables
-	private final MIAPI mi;
-	private final LoggerAPI logger;
-	private final DatabaseAPI database;
-	private final ProgramAPI program;
-	private final MICallerAPI miCaller;
-	private String agent;
-	private String paymentTerms;
-	private String agent2;
-	private String agent3;
 }
